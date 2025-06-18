@@ -1,11 +1,13 @@
-FROM golang:1.24 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24 AS builder
+
+ARG TARGETOS TARGETARCH
 
 ARG VERSION
 ENV PKG=github.com/resmoio/kubernetes-event-exporter/pkg
 
 ADD . /app
 WORKDIR /app
-RUN CGO_ENABLED=0 GOOS=linux GO11MODULE=on go build -ldflags="-s -w -X ${PKG}/version.Version=${VERSION}" -a -o /main .
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 GO11MODULE=on go build -trimpath -ldflags="-s -w -X ${PKG}/version.Version=${VERSION}" -a -o /main .
 
 FROM gcr.io/distroless/static:nonroot
 COPY --from=builder --chown=nonroot:nonroot /main /kubernetes-event-exporter
