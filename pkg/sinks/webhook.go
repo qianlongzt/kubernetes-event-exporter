@@ -45,6 +45,11 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 		return err
 	}
 
+	log.Debug().
+		Str("endpoint", w.cfg.Endpoint).
+		Str("body", string(reqBody)).
+		Msg("webhook request body")
+
 	req, err := http.NewRequest(http.MethodPost, w.cfg.Endpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
@@ -76,7 +81,7 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-		return errors.New("not successfull (2xx) response: " + string(body))
+		return errors.New("not successful (2xx) response: " + string(body))
 	}
 
 	return nil
