@@ -74,7 +74,7 @@ func newMockEventWatcher(MaxEventAgeSeconds int64, metricsStore *metrics.Store) 
 }
 
 func setOutputBuf() *bytes.Buffer {
-	output := setOutputBuf()
+	output := &bytes.Buffer{}
 
 	j := slog.NewJSONHandler(output, &slog.HandlerOptions{})
 	slog.SetDefault(slog.New(j))

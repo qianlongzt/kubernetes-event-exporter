@@ -18,10 +18,11 @@ func TestEngineNoRoutes(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		t.FailNow()
-	} else {
-		ev := &kube.EnhancedEvent{}
-		e.OnEvent(ev)
+		return
 	}
+
+	ev := &kube.EnhancedEvent{}
+	e.OnEvent(ev)
 }
 
 func TestEngineSimple(t *testing.T) {
@@ -70,10 +71,7 @@ func TestEngineDropSimple(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		t.FailNow()
-	} else {
-		ev := &kube.EnhancedEvent{}
-		e.OnEvent(ev)
-		assert.Contains(t, config.Ref.Events, ev)
+		return
 	}
 
 	ev := &kube.EnhancedEvent{}
