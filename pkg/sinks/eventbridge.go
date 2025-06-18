@@ -3,13 +3,14 @@ package sinks
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eventbridge"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
-	"time"
 )
 
 type EventBridgeConfig struct {
@@ -49,7 +50,7 @@ func NewEventBridgeSink(cfg *EventBridgeConfig) (Sink, error) {
 }
 
 func (s *EventBridgeSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
-	log.Info().Msg("Sending event to EventBridge ")
+	slog.Info("Sending event to EventBridge ")
 	var toSend string
 	if s.cfg.Details != nil {
 		res, err := convertLayoutTemplate(s.cfg.Details, ev)
@@ -73,13 +74,13 @@ func (s *EventBridgeSink) Send(ctx context.Context, ev *kube.EnhancedEvent) erro
 		Source:       &s.cfg.Source,
 		EventBusName: &s.cfg.EventBusName,
 	}
-	log.Info().Str("InputEvent", inputRequest.String()).Msg("Request")
+	slog.With("InputEvent", inputRequest.String()).Info("Request")
 
 	req, _ := s.svc.PutEventsRequest(&eventbridge.PutEventsInput{Entries: []*eventbridge.PutEventsRequestEntry{&inputRequest}})
 	// TODO: Retry failed events
 	err := req.Send()
 	if err != nil {
-		log.Error().Err(err).Msg("EventBridge Error")
+		slog.Error("EventBridge Error","err", err)
 		return err
 	}
 	return nil

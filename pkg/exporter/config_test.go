@@ -2,10 +2,10 @@ package exporter
 
 import (
 	"bytes"
+	"log/slog"
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
@@ -53,9 +53,15 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenNotSet(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestValidate_IsCheckingMaxEventAgeSeconds_WhenThrottledPeriodSet(t *testing.T) {
+func setOutputBuf() *bytes.Buffer {
 	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	j := slog.NewJSONHandler(output, &slog.HandlerOptions{})
+	slog.SetDefault(slog.New(j))
+	return output
+}
+
+func TestValidate_IsCheckingMaxEventAgeSeconds_WhenThrottledPeriodSet(t *testing.T) {
+	output := setOutputBuf()
 
 	config := Config{
 		ThrottlePeriod: 123,
@@ -64,13 +70,12 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenThrottledPeriodSet(t *testing
 
 	assert.True(t, config.MaxEventAgeSeconds == 123)
 	assert.Contains(t, output.String(), "config.maxEventAgeSeconds=123")
-	assert.Contains(t, output.String(), "config.throttlePeriod is depricated, consider using config.maxEventAgeSeconds instead")
+	assert.Contains(t, output.String(), "config.throttlePeriod is deprecated, consider using config.maxEventAgeSeconds instead")
 	assert.NoError(t, err)
 }
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsSet(t *testing.T) {
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
 	config := Config{
 		MaxEventAgeSeconds: 123,
@@ -82,8 +87,7 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsSet(t *test
 }
 
 func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsAndThrottledPeriodSet(t *testing.T) {
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
 	config := Config{
 		ThrottlePeriod:     123,
@@ -91,12 +95,11 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenMaxEventAgeSecondsAndThrottle
 	}
 	err := config.Validate()
 	assert.Error(t, err)
-	assert.Contains(t, output.String(), "cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
+	assert.Contains(t, output.String(), "cannot set both throttlePeriod (deprecated) and MaxEventAgeSeconds")
 }
 
 func TestValidate_MetricsNamePrefix_WhenEmpty(t *testing.T) {
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
 	config := Config{}
 	err := config.Validate()
@@ -106,8 +109,7 @@ func TestValidate_MetricsNamePrefix_WhenEmpty(t *testing.T) {
 }
 
 func TestValidate_MetricsNamePrefix_WhenValid(t *testing.T) {
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
 	validCases := []string{
 		"kubernetes_event_exporter_",
@@ -130,8 +132,7 @@ func TestValidate_MetricsNamePrefix_WhenValid(t *testing.T) {
 }
 
 func TestValidate_MetricsNamePrefix_WhenInvalid(t *testing.T) {
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
 	invalidCases := []string{
 		"no_tracing_underscore",

@@ -8,11 +8,11 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/IBM/sarama"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 
 	"github.com/xdg-go/scram"
 )
@@ -69,14 +69,14 @@ func NewKafkaSink(cfg *KafkaConfig) (Sink, error) {
 		return nil, err
 	}
 
-	log.Info().Msgf("kafka: Producer initialized for topic: %s, brokers: %s", cfg.Topic, cfg.Brokers)
+	slog.Info(fmt.Sprintf("kafka: Producer initialized for topic: %s, brokers: %s", cfg.Topic, cfg.Brokers))
 	if len(cfg.KafkaEncode.SchemaID) > 0 {
 		var err error
 		avro, err = NewAvroEncoder(cfg.KafkaEncode.SchemaID, cfg.KafkaEncode.Schema)
 		if err != nil {
 			return nil, err
 		}
-		log.Info().Msgf("kafka: Producer using avro encoding with schemaid: %s", cfg.KafkaEncode.SchemaID)
+		slog.Info(fmt.Sprintf("kafka: Producer using avro encoding with schemaid: %s", cfg.KafkaEncode.SchemaID))
 	}
 
 	return &KafkaSink{
@@ -121,12 +121,12 @@ func (k *KafkaSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 
 // Close the Kafka producer
 func (k *KafkaSink) Close() {
-	log.Info().Msgf("kafka: Closing producer...")
+	slog.Info("kafka: Closing producer...")
 
 	if err := k.producer.Close(); err != nil {
-		log.Error().Err(err).Msg("Failed to shut down the Kafka producer cleanly")
+		slog.Error("Failed to shut down the Kafka producer cleanly","err",err)
 	} else {
-		log.Info().Msg("kafka: Closed producer")
+		slog.Info("kafka: Closed producer")
 	}
 }
 

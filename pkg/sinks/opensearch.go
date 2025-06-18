@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	opensearch "github.com/opensearch-project/opensearch-go"
 	opensearchapi "github.com/opensearch-project/opensearch-go/opensearchapi"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 )
 
 type OpenSearchConfig struct {
@@ -34,7 +34,6 @@ type OpenSearchConfig struct {
 }
 
 func NewOpenSearch(cfg *OpenSearchConfig) (*OpenSearch, error) {
-
 	tlsClientConfig, err := setupTLS(&cfg.TLS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup TLS: %w", err)
@@ -137,7 +136,7 @@ func (e *OpenSearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 		if err != nil {
 			return err
 		}
-		log.Error().Msgf("Indexing failed: %s", string(rb))
+		slog.Error(fmt.Sprintf("Indexing failed: %s", string(rb)))
 	}
 	return nil
 }

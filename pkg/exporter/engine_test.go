@@ -1,10 +1,11 @@
 package exporter
 
 import (
+	"testing"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestEngineNoRoutes(t *testing.T) {
@@ -13,9 +14,14 @@ func TestEngineNoRoutes(t *testing.T) {
 		Receivers: nil,
 	}
 
-	e := NewEngine(cfg, &SyncRegistry{})
-	ev := &kube.EnhancedEvent{}
-	e.OnEvent(ev)
+	e, err := NewEngine(cfg, &SyncRegistry{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		t.FailNow()
+	} else {
+		ev := &kube.EnhancedEvent{}
+		e.OnEvent(ev)
+	}
 }
 
 func TestEngineSimple(t *testing.T) {
@@ -32,11 +38,15 @@ func TestEngineSimple(t *testing.T) {
 		}},
 	}
 
-	e := NewEngine(cfg, &SyncRegistry{})
-	ev := &kube.EnhancedEvent{}
-	e.OnEvent(ev)
-
-	assert.Contains(t, config.Ref.Events, ev)
+	e, err := NewEngine(cfg, &SyncRegistry{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		t.FailNow()
+	} else {
+		ev := &kube.EnhancedEvent{}
+		e.OnEvent(ev)
+		assert.Contains(t, config.Ref.Events, ev)
+	}
 }
 
 func TestEngineDropSimple(t *testing.T) {
@@ -56,7 +66,16 @@ func TestEngineDropSimple(t *testing.T) {
 		}},
 	}
 
-	e := NewEngine(cfg, &SyncRegistry{})
+	e, err := NewEngine(cfg, &SyncRegistry{})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		t.FailNow()
+	} else {
+		ev := &kube.EnhancedEvent{}
+		e.OnEvent(ev)
+		assert.Contains(t, config.Ref.Events, ev)
+	}
+
 	ev := &kube.EnhancedEvent{}
 	e.OnEvent(ev)
 

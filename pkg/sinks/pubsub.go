@@ -2,10 +2,11 @@ package sinks
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 )
 
 type PubsubConfig struct {
@@ -33,7 +34,7 @@ func NewPubsubSink(cfg *PubsubConfig) (Sink, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Info().Msgf("pubsub: created topic: %s", cfg.Topic)
+		slog.Info(fmt.Sprintf("pubsub: created topic: %s", cfg.Topic))
 	} else {
 		topic = pubsubClient.Topic(cfg.Topic)
 	}
@@ -54,6 +55,6 @@ func (ps *PubsubSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 }
 
 func (ps *PubsubSink) Close() {
-	log.Info().Msgf("pubsub: Closing topic...")
+	slog.Info("pubsub: Closing topic...")
 	ps.pubsubClient.Close()
 }

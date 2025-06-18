@@ -1,10 +1,11 @@
 package exporter
 
 import (
+	"errors"
+	"log/slog"
 	"reflect"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 )
 
 // Engine is responsible for initializing the receivers from sinks
@@ -13,17 +14,17 @@ type Engine struct {
 	Registry ReceiverRegistry
 }
 
-func NewEngine(config *Config, registry ReceiverRegistry) *Engine {
+func NewEngine(config *Config, registry ReceiverRegistry) (*Engine, error) {
 	for _, v := range config.Receivers {
 		sink, err := v.GetSink()
 		if err != nil {
-			log.Fatal().Err(err).Str("name", v.Name).Msg("Cannot initialize sink")
+			return nil, errors.New("Cannot initialize sink " + v.Name)
 		}
 
-		log.Info().
-			Str("name", v.Name).
-			Str("type", reflect.TypeOf(sink).String()).
-			Msg("Registering sink")
+		slog.With(
+			"name", v.Name,
+			"type", reflect.TypeOf(sink).String(),
+		).Info("Registering sink")
 
 		registry.Register(v.Name, sink)
 	}
@@ -31,7 +32,7 @@ func NewEngine(config *Config, registry ReceiverRegistry) *Engine {
 	return &Engine{
 		Route:    config.Route,
 		Registry: registry,
-	}
+	}, nil
 }
 
 // OnEvent does not care whether event is add or update. Prior filtering should be done in the controller/watcher
@@ -41,7 +42,7 @@ func (e *Engine) OnEvent(event *kube.EnhancedEvent) {
 
 // Stop stops all registered sinks
 func (e *Engine) Stop() {
-	log.Info().Msg("Closing sinks")
+	slog.Info("Closing sinks")
 	e.Registry.Close()
-	log.Info().Msg("All sinks closed")
+	slog.Info("All sinks closed")
 }

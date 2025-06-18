@@ -2,10 +2,10 @@ package sinks
 
 import (
 	"context"
+	"log/slog"
 	"sort"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 	"github.com/slack-go/slack"
 )
 
@@ -95,7 +95,14 @@ func (s *SlackSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	}
 
 	_ch, _ts, _text, err := s.client.SendMessageContext(ctx, channel, options...)
-	log.Debug().Str("ch", _ch).Str("ts", _ts).Str("text", _text).Err(err).Msg("Slack Response")
+	l := slog.With("ch", _ch, "ts", _ts, "text", _text)
+	if err != nil {
+		l.Error(
+			"Slack Response", "err", err)
+	} else {
+		l.Debug("Slack Response")
+	}
+
 	return err
 }
 

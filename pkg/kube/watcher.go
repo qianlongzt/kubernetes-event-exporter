@@ -1,11 +1,11 @@
 package kube
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
-	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/dynamic"
@@ -75,13 +75,15 @@ func (e *EventWatcher) isEventDiscarded(event *corev1.Event) bool {
 	eventAge := time.Since(timestamp)
 	if eventAge > e.maxEventAgeSeconds {
 		// Log discarded events if they were created after the watcher started
-		// (to suppres warnings from initial synchrnization)
+		// (to suppress warnings from initial synchronization)
 		if timestamp.After(startUpTime) {
-			log.Warn().
-				Str("event age", eventAge.String()).
-				Str("event namespace", event.Namespace).
-				Str("event name", event.Name).
-				Msg("Event discarded as being older then maxEventAgeSeconds")
+			slog.With(
+
+				"event age", eventAge.String(),
+				"event namespace", event.Namespace,
+				"event name", event.Name,
+			).
+				Warn("Event discarded as being older then maxEventAgeSeconds")
 			e.metricsStore.EventsDiscarded.Inc()
 		}
 		return true
@@ -94,12 +96,13 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 		return
 	}
 
-	log.Debug().
-		Str("msg", event.Message).
-		Str("namespace", event.Namespace).
-		Str("reason", event.Reason).
-		Str("involvedObject", event.InvolvedObject.Name).
-		Msg("Received event")
+	slog.With(
+		"msg", event.Message,
+		"namespace", event.Namespace,
+		"reason", event.Reason,
+		"involvedObject", event.InvolvedObject.Name,
+	).
+		Debug("Received event")
 
 	e.metricsStore.EventsProcessed.Inc()
 
@@ -113,11 +116,12 @@ func (e *EventWatcher) onEvent(event *corev1.Event) {
 	} else {
 		objectMetadata, err := e.objectMetadataCache.GetObjectMetadata(&event.InvolvedObject, e.clientset, e.dynamicClient, e.metricsStore)
 		if err != nil {
+			l := slog.With("err", err.Error())
 			if errors.IsNotFound(err) {
 				ev.InvolvedObject.Deleted = true
-				log.Error().Err(err).Msg("Object not found, likely deleted")
+				l.Error("Object not found, likely deleted")
 			} else {
-				log.Error().Err(err).Msg("Failed to get object metadata")
+				l.Error("Failed to get object metadata")
 			}
 			ev.InvolvedObject.ObjectReference = *event.InvolvedObject.DeepCopy()
 		} else {

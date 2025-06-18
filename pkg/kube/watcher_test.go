@@ -2,13 +2,13 @@ package kube
 
 import (
 	"bytes"
+	"log/slog"
 	"testing"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
-	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -73,22 +73,29 @@ func newMockEventWatcher(MaxEventAgeSeconds int64, metricsStore *metrics.Store) 
 	return watcher
 }
 
+func setOutputBuf() *bytes.Buffer {
+	output := setOutputBuf()
+
+	j := slog.NewJSONHandler(output, &slog.HandlerOptions{})
+	slog.SetDefault(slog.New(j))
+	return output
+}
+
 func TestEventWatcher_EventAge_whenEventCreatedBeforeStartup(t *testing.T) {
 	// should not discard events as old as 300s=5m
 	var MaxEventAgeSeconds int64 = 300
 	metricsStore := metrics.NewMetricsStore("test_")
 	ew := newMockEventWatcher(MaxEventAgeSeconds, metricsStore)
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
-	// event is 3m before stratup time -> expect silently dropped
+	// event is 3m before startup time -> expect silently dropped
 	startup := time.Now().Add(-10 * time.Minute)
 	ew.setStartUpTime(startup)
 	event1 := corev1.Event{
 		LastTimestamp: metav1.Time{Time: startup.Add(-3 * time.Minute)},
 	}
 
-	// event is 3m before stratup time -> expect silently dropped
+	// event is 3m before startup time -> expect silently dropped
 	assert.True(t, ew.isEventDiscarded(&event1))
 	assert.NotContains(t, output.String(), "Event discarded as being older then maxEventAgeSeconds")
 	ew.onEvent(&event1)
@@ -105,7 +112,7 @@ func TestEventWatcher_EventAge_whenEventCreatedBeforeStartup(t *testing.T) {
 	assert.NotContains(t, output.String(), "Received event")
 	assert.Equal(t, float64(0), testutil.ToFloat64(metricsStore.EventsProcessed))
 
-	// event is 3m before stratup time -> expect silently dropped
+	// event is 3m before startup time -> expect silently dropped
 	event3 := corev1.Event{
 		LastTimestamp: metav1.Time{Time: startup.Add(-3 * time.Minute)},
 		EventTime:     metav1.MicroTime{Time: startup.Add(-3 * time.Minute)},
@@ -125,12 +132,11 @@ func TestEventWatcher_EventAge_whenEventCreatedAfterStartupAndBeforeMaxAge(t *te
 	var MaxEventAgeSeconds int64 = 300
 	metricsStore := metrics.NewMetricsStore("test_")
 	ew := newMockEventWatcher(MaxEventAgeSeconds, metricsStore)
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
 	startup := time.Now().Add(-10 * time.Minute)
 	ew.setStartUpTime(startup)
-	// event is 8m after stratup time (2m in max age) -> expect processed
+	// event is 8m after startup time (2m in max age) -> expect processed
 	event1 := corev1.Event{
 		InvolvedObject: corev1.ObjectReference{
 			UID:  "test",
@@ -146,7 +152,7 @@ func TestEventWatcher_EventAge_whenEventCreatedAfterStartupAndBeforeMaxAge(t *te
 	assert.Contains(t, output.String(), "Received event")
 	assert.Equal(t, float64(1), testutil.ToFloat64(metricsStore.EventsProcessed))
 
-	// event is 8m after stratup time (2m in max age) -> expect processed
+	// event is 8m after startup time (2m in max age) -> expect processed
 	event2 := corev1.Event{
 		InvolvedObject: corev1.ObjectReference{
 			UID:  "test",
@@ -162,7 +168,7 @@ func TestEventWatcher_EventAge_whenEventCreatedAfterStartupAndBeforeMaxAge(t *te
 	assert.Contains(t, output.String(), "Received event")
 	assert.Equal(t, float64(2), testutil.ToFloat64(metricsStore.EventsProcessed))
 
-	// event is 8m after stratup time (2m in max age) -> expect processed
+	// event is 8m after startup time (2m in max age) -> expect processed
 	event3 := corev1.Event{
 		InvolvedObject: corev1.ObjectReference{
 			UID:  "test",
@@ -187,10 +193,9 @@ func TestEventWatcher_EventAge_whenEventCreatedAfterStartupAndAfterMaxAge(t *tes
 	var MaxEventAgeSeconds int64 = 300
 	metricsStore := metrics.NewMetricsStore("test_")
 	ew := newMockEventWatcher(MaxEventAgeSeconds, metricsStore)
-	output := &bytes.Buffer{}
-	log.Logger = log.Logger.Output(output)
+	output := setOutputBuf()
 
-	// event is 3m after stratup time (and 2m after max age) -> expect dropped with warn
+	// event is 3m after startup time (and 2m after max age) -> expect dropped with warn
 	startup := time.Now().Add(-10 * time.Minute)
 	ew.setStartUpTime(startup)
 	event1 := corev1.Event{
@@ -204,7 +209,7 @@ func TestEventWatcher_EventAge_whenEventCreatedAfterStartupAndAfterMaxAge(t *tes
 	assert.NotContains(t, output.String(), "Received event")
 	assert.Equal(t, float64(0), testutil.ToFloat64(metricsStore.EventsProcessed))
 
-	// event is 3m after stratup time (and 2m after max age) -> expect dropped with warn
+	// event is 3m after startup time (and 2m after max age) -> expect dropped with warn
 	event2 := corev1.Event{
 		ObjectMeta: metav1.ObjectMeta{Name: "event2"},
 		EventTime:  metav1.MicroTime{Time: startup.Add(3 * time.Minute)},
@@ -217,7 +222,7 @@ func TestEventWatcher_EventAge_whenEventCreatedAfterStartupAndAfterMaxAge(t *tes
 	assert.NotContains(t, output.String(), "Received event")
 	assert.Equal(t, float64(0), testutil.ToFloat64(metricsStore.EventsProcessed))
 
-	// event is 3m after stratup time (and 2m after max age) -> expect dropped with warn
+	// event is 3m after startup time (and 2m after max age) -> expect dropped with warn
 	event3 := corev1.Event{
 		ObjectMeta:    metav1.ObjectMeta{Name: "event3"},
 		LastTimestamp: metav1.Time{Time: startup.Add(3 * time.Minute)},

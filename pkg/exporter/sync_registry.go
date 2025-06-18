@@ -2,9 +2,10 @@ package exporter
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
-	"github.com/rs/zerolog/log"
 )
 
 // SyncRegistry is for development purposes and performs poorly and blocks when an event is received so it is
@@ -16,7 +17,11 @@ type SyncRegistry struct {
 func (s *SyncRegistry) SendEvent(name string, event *kube.EnhancedEvent) {
 	err := s.reg[name].Send(context.Background(), event)
 	if err != nil {
-		log.Debug().Err(err).Str("sink", name).Str("event", string(event.UID)).Msg("Cannot send event")
+		slog.With(
+			"sink", name,
+			"event", string(event.UID),
+			"err", err,
+		).Error("Cannot send event")
 	}
 }
 
@@ -30,7 +35,7 @@ func (s *SyncRegistry) Register(name string, sink sinks.Sink) {
 
 func (s *SyncRegistry) Close() {
 	for name, sink := range s.reg {
-		log.Info().Str("sink", name).Msg("Closing sink")
+		slog.With("sink", name).Info("Closing sink")
 		sink.Close()
 	}
 }

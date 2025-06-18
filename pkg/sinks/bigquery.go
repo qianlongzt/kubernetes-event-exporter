@@ -2,19 +2,20 @@ package sinks
 
 import (
 	"bufio"
-	"cloud.google.com/go/bigquery"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/batch"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
-	"google.golang.org/api/option"
+	"log/slog"
 	"math/rand"
 	"os"
 	"time"
 	"unicode"
+
+	"cloud.google.com/go/bigquery"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/batch"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
+	"google.golang.org/api/option"
 )
 
 // Returns a map filtering out keys that have nil value assigned.
@@ -121,7 +122,7 @@ func bigQueryImportJsonFromFile(path string, cfg *BigQueryConfig) error {
 	loader := client.Dataset(cfg.Dataset).Table(cfg.Table).LoaderFrom(source)
 	loader.SchemaUpdateOptions = []string{"ALLOW_FIELD_ADDITION"}
 
-	log.Info().Msgf("BigQuery batch uploading %.3f KBs...", float64(fi.Size())/1e3)
+	slog.Info(fmt.Sprintf("BigQuery batch uploading %.3f KBs...", float64(fi.Size())/1e3))
 	job, err := loader.Run(ctx)
 	if err != nil {
 		return err
@@ -130,7 +131,7 @@ func bigQueryImportJsonFromFile(path string, cfg *BigQueryConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("BigQuery batch uploading done.")
+	slog.Info("BigQuery batch uploading done.")
 	if err := status.Err(); err != nil {
 		return err
 	}
@@ -189,21 +190,21 @@ func NewBigQuerySink(cfg *BigQueryConfig) (*BigQuerySink, error) {
 		}
 		path := fmt.Sprintf("/tmp/bq_batch-%d-%04x.json", time.Now().UTC().Unix(), rand.Uint64()%65535)
 		if err := bigQueryWriteBatchToJsonFile(items, path); err != nil {
-			log.Error().Msgf("Failed to write JSON file: %v", err)
+			slog.Error(fmt.Sprintf("Failed to write JSON file: %v", err))
 		}
 		if err := bigQueryImportJsonFromFile(path, cfg); err != nil {
-			log.Error().Msgf("BigQuerySink load failed: %v", err)
+			slog.Error(fmt.Sprintf("BigQuerySink load failed: %v", err))
 		} else {
-			// The batch file is intentionally not deleted in case of failure allowing to manually uplaod it later and debug issues.
+			// The batch file is intentionally not deleted in case of failure allowing to manually upload it later and debug issues.
 			if err := os.Remove(path); err != nil {
-				log.Error().Msgf("Failed to delete file %v: %v", path, err)
+				slog.Error(fmt.Sprintf("Failed to delete file %v: %v", path, err))
 			}
 		}
 		return res
 	}
 
 	if err := bigQueryCreateDataset(cfg); err != nil {
-		log.Error().Msgf("BigQuerySink create dataset failed: %v", err)
+		slog.Error(fmt.Sprintf("BigQuerySink create dataset failed: %v", err))
 	}
 
 	batchWriter := batch.NewWriter(

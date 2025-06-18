@@ -2,12 +2,12 @@ package exporter
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/metrics"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
-	"github.com/rs/zerolog/log"
 )
 
 // ChannelBasedReceiverRegistry creates two channels for each receiver. One is for receiving events and other one is
@@ -16,16 +16,16 @@ import (
 // and we might need a mechanism to drop the vents
 // On closing, the registry sends a signal on all exit channels, and then waits for all to complete.
 type ChannelBasedReceiverRegistry struct {
-	ch     map[string]chan kube.EnhancedEvent
-	exitCh map[string]chan interface{}
-	wg     *sync.WaitGroup
+	ch           map[string]chan kube.EnhancedEvent
+	exitCh       map[string]chan interface{}
+	wg           *sync.WaitGroup
 	MetricsStore *metrics.Store
 }
 
 func (r *ChannelBasedReceiverRegistry) SendEvent(name string, event *kube.EnhancedEvent) {
 	ch := r.ch[name]
 	if ch == nil {
-		log.Error().Str("name", name).Msg("There is no channel")
+		slog.With("name", name).Error("There is no channel")
 	}
 
 	go func() {
@@ -51,23 +51,25 @@ func (r *ChannelBasedReceiverRegistry) Register(name string, receiver sinks.Sink
 	r.wg.Add(1)
 
 	go func() {
+		l := slog.With("sink", name)
 	Loop:
 		for {
 			select {
 			case ev := <-ch:
-				log.Debug().Str("sink", name).Str("event", ev.Message).Msg("sending event to sink")
+				l := l.With(slog.String("event", ev.Message))
+				l.Debug("sending event to sink")
 				err := receiver.Send(context.Background(), &ev)
 				if err != nil {
 					r.MetricsStore.SendErrors.Inc()
-					log.Debug().Err(err).Str("sink", name).Str("event", ev.Message).Msg("Cannot send event")
+					l.With(slog.Any("err", err)).Error("Cannot send event")
 				}
 			case <-exitCh:
-				log.Info().Str("sink", name).Msg("Closing the sink")
+				l.Info("Closing the sink")
 				break Loop
 			}
 		}
 		receiver.Close()
-		log.Info().Str("sink", name).Msg("Closed")
+		l.Info("Closed")
 		r.wg.Done()
 	}()
 }

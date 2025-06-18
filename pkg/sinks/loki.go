@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"io/ioutil"
+	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/rs/zerolog/log"
+
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 type promtailStream struct {
@@ -77,10 +78,9 @@ func (l *Loki) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	for k, v := range l.cfg.Headers {
 		realValue, err := GetString(ev, v)
 		if err != nil {
-			log.Debug().Err(err).Msgf("parse template failed: %s", v)
 			req.Header.Add(k, v)
 		} else {
-			log.Debug().Msgf("request header: {%s: %s}", k, realValue)
+			slog.Debug(fmt.Sprintf("request header: {%s: %s}", k, realValue))
 			req.Header.Add(k, realValue)
 		}
 	}
@@ -93,13 +93,13 @@ func (l *Loki) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
 	if !(resp.StatusCode >= 200 && resp.StatusCode < 300) {
-		return errors.New("not successfull (2xx) response: " + string(body))
+		return errors.New("not successful (2xx) response: " + string(body))
 	}
 
 	return nil

@@ -3,12 +3,12 @@ package exporter
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strconv"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/sinks"
-	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/rest"
 )
 
@@ -40,17 +40,17 @@ type Config struct {
 func (c *Config) SetDefaults() {
 	if c.CacheSize == 0 {
 		c.CacheSize = DefaultCacheSize
-		log.Debug().Msg("setting config.cacheSize=1024 (default)")
+		slog.Debug("setting config.cacheSize=1024 (default)")
 	}
 
 	if c.KubeBurst == 0 {
 		c.KubeBurst = rest.DefaultBurst
-		log.Debug().Msg(fmt.Sprintf("setting config.kubeBurst=%d (default)", rest.DefaultBurst))
+		slog.Debug(fmt.Sprintf("setting config.kubeBurst=%d (default)", rest.DefaultBurst))
 	}
 
 	if c.KubeQPS == 0 {
 		c.KubeQPS = rest.DefaultQPS
-		log.Debug().Msg(fmt.Sprintf("setting config.kubeQPS=%.2f (default)", rest.DefaultQPS))
+		slog.Debug(fmt.Sprintf("setting config.kubeQPS=%.2f (default)", rest.DefaultQPS))
 	}
 }
 
@@ -78,18 +78,18 @@ func (c *Config) validateDefaults() error {
 func (c *Config) validateMaxEventAgeSeconds() error {
 	if c.ThrottlePeriod == 0 && c.MaxEventAgeSeconds == 0 {
 		c.MaxEventAgeSeconds = 5
-		log.Info().Msg("setting config.maxEventAgeSeconds=5 (default)")
+		slog.Info("setting config.maxEventAgeSeconds=5 (default)")
 	} else if c.ThrottlePeriod != 0 && c.MaxEventAgeSeconds != 0 {
-		log.Error().Msg("cannot set both throttlePeriod (depricated) and MaxEventAgeSeconds")
+		slog.Error("cannot set both throttlePeriod (deprecated) and MaxEventAgeSeconds")
 		return errors.New("validateMaxEventAgeSeconds failed")
 	} else if c.ThrottlePeriod != 0 {
 		log_value := strconv.FormatInt(c.ThrottlePeriod, 10)
-		log.Info().Msg("config.maxEventAgeSeconds=" + log_value)
-		log.Warn().Msg("config.throttlePeriod is depricated, consider using config.maxEventAgeSeconds instead")
+		slog.Info("config.maxEventAgeSeconds=" + log_value)
+		slog.Warn("config.throttlePeriod is deprecated, consider using config.maxEventAgeSeconds instead")
 		c.MaxEventAgeSeconds = c.ThrottlePeriod
 	} else {
 		log_value := strconv.FormatInt(c.MaxEventAgeSeconds, 10)
-		log.Info().Msg("config.maxEventAgeSeconds=" + log_value)
+		slog.Info("config.maxEventAgeSeconds=" + log_value)
 	}
 	return nil
 }
@@ -102,13 +102,13 @@ func (c *Config) validateMetricsNamePrefix() error {
 			return err
 		}
 		if checkResult {
-			log.Info().Msg("config.metricsNamePrefix='" + c.MetricsNamePrefix + "'")
+			slog.Info("config.metricsNamePrefix='" + c.MetricsNamePrefix + "'")
 		} else {
-			log.Error().Msg("config.metricsNamePrefix should match the regex: ^[a-zA-Z][a-zA-Z0-9_:]*_$")
+			slog.Error("config.metricsNamePrefix should match the regex: ^[a-zA-Z][a-zA-Z0-9_:]*_$")
 			return errors.New("validateMetricsNamePrefix failed")
 		}
 	} else {
-		log.Warn().Msg("metrics name prefix is empty, setting config.metricsNamePrefix='event_exporter_' is recommended")
+		slog.Warn("metrics name prefix is empty, setting config.metricsNamePrefix='event_exporter_' is recommended")
 	}
 	return nil
 }

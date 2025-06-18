@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"regexp"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 )
 
 type ElasticsearchConfig struct {
@@ -37,13 +37,12 @@ type ElasticsearchConfig struct {
 }
 
 func NewElasticsearch(cfg *ElasticsearchConfig) (*Elasticsearch, error) {
-
 	tlsClientConfig, err := setupTLS(&cfg.TLS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup TLS: %w", err)
 	}
 
-	var header = http.Header{}
+	header := http.Header{}
 	if len(cfg.Headers) > 0 {
 		for k, v := range cfg.Headers {
 			header.Add(k, v)
@@ -150,7 +149,7 @@ func (e *Elasticsearch) Send(ctx context.Context, ev *kube.EnhancedEvent) error 
 		if err != nil {
 			return err
 		}
-		log.Error().Msgf("Indexing failed: %s", string(rb))
+		slog.Error(fmt.Sprintf("Indexing failed: %s", string(rb)))
 	}
 	return nil
 }

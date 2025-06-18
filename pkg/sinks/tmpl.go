@@ -3,15 +3,20 @@ package sinks
 import (
 	"bytes"
 	"encoding/json"
+	"log/slog"
 	"text/template"
 
-	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 	"github.com/Masterminds/sprig/v3"
+	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
 
 func GetString(event *kube.EnhancedEvent, text string) (string, error) {
 	tmpl, err := template.New("template").Funcs(sprig.TxtFuncMap()).Parse(text)
 	if err != nil {
+		slog.With(
+			"err", err,
+			"value", text,
+		).Warn("parse template failed")
 		return "", err
 	}
 
@@ -19,6 +24,10 @@ func GetString(event *kube.EnhancedEvent, text string) (string, error) {
 	// TODO: Should we send event directly or more events?
 	err = tmpl.Execute(buf, event)
 	if err != nil {
+		slog.With(
+			"err", err,
+			"value", text,
+		).Warn("execute template failed")
 		return "", err
 	}
 

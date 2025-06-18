@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
-	"github.com/rs/zerolog/log"
 )
 
 type WebhookConfig struct {
@@ -45,10 +45,11 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 		return err
 	}
 
-	log.Debug().
-		Str("endpoint", w.cfg.Endpoint).
-		Str("body", string(reqBody)).
-		Msg("webhook request body")
+	slog.With(
+		"endpoint", w.cfg.Endpoint,
+		"body", string(reqBody),
+	).
+		Debug("webhook request body")
 
 	req, err := http.NewRequest(http.MethodPost, w.cfg.Endpoint, bytes.NewReader(reqBody))
 	if err != nil {
@@ -59,10 +60,9 @@ func (w *Webhook) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
 	for k, v := range w.cfg.Headers {
 		realValue, err := GetString(ev, v)
 		if err != nil {
-			log.Debug().Err(err).Msgf("parse template failed: %s", v)
 			req.Header.Add(k, v)
 		} else {
-			log.Debug().Msgf("request header: {%s: %s}", k, realValue)
+			slog.With(k, realValue).Debug("request header")
 			req.Header.Add(k, realValue)
 		}
 	}
