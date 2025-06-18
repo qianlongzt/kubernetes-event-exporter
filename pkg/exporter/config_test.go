@@ -55,7 +55,9 @@ func TestValidate_IsCheckingMaxEventAgeSeconds_WhenNotSet(t *testing.T) {
 
 func setOutputBuf() *bytes.Buffer {
 	output := &bytes.Buffer{}
-	j := slog.NewJSONHandler(output, &slog.HandlerOptions{})
+	j := slog.NewJSONHandler(output, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})
 	slog.SetDefault(slog.New(j))
 	return output
 }
