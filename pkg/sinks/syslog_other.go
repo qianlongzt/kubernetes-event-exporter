@@ -1,11 +1,9 @@
-//go:build !windows && !plan9
+//go:build windows || plan9
 
 package sinks
 
 import (
 	"context"
-	"encoding/json"
-	"log/syslog"
 
 	"github.com/resmoio/kubernetes-event-exporter/pkg/kube"
 )
@@ -17,30 +15,15 @@ type SyslogConfig struct {
 }
 
 type SyslogSink struct {
-	sw *syslog.Writer
 }
 
 func NewSyslogSink(config *SyslogConfig) (Sink, error) {
-	w, err := syslog.Dial(config.Network, config.Address, syslog.LOG_LOCAL0, config.Tag)
-	if err != nil {
-		return nil, err
-	}
-	return &SyslogSink{sw: w}, nil
+	return &SyslogSink{}, nil
 }
 
 func (w *SyslogSink) Close() {
-	w.sw.Close()
 }
 
 func (w *SyslogSink) Send(ctx context.Context, ev *kube.EnhancedEvent) error {
-	if b, err := json.Marshal(ev); err == nil {
-		_, writeErr := w.sw.Write(b)
-
-		if writeErr != nil {
-			return writeErr
-		}
-	} else {
-		return err
-	}
 	return nil
 }
