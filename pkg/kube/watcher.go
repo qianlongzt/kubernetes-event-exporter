@@ -57,7 +57,7 @@ func NewEventWatcher(config *rest.Config, namespace string, MaxEventAgeSeconds i
 	return watcher
 }
 
-func (e *EventWatcher) OnAdd(obj interface{}) {
+func (e *EventWatcher) OnAdd(obj interface{}, _ bool) {
 	event := obj.(*corev1.Event)
 	e.onEvent(event)
 }
