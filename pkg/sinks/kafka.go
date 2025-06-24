@@ -19,12 +19,12 @@ import (
 
 // KafkaConfig is the Kafka producer configuration
 type KafkaConfig struct {
-	Topic            string                 `yaml:"topic"`
-	Brokers          []string               `yaml:"brokers"`
-	Layout           map[string]interface{} `yaml:"layout"`
-	ClientId         string                 `yaml:"clientId"`
-	CompressionCodec string                 `yaml:"compressionCodec" default:"none"`
-	Version          string                 `yaml:"version"`
+	Topic            string         `yaml:"topic"`
+	Brokers          []string       `yaml:"brokers"`
+	Layout           map[string]any `yaml:"layout"`
+	ClientId         string         `yaml:"clientId"`
+	CompressionCodec string         `yaml:"compressionCodec" default:"none"`
+	Version          string         `yaml:"version"`
 	TLS              struct {
 		Enable             bool   `yaml:"enable"`
 		CaFile             string `yaml:"caFile"`
@@ -124,7 +124,7 @@ func (k *KafkaSink) Close() {
 	slog.Info("kafka: Closing producer...")
 
 	if err := k.producer.Close(); err != nil {
-		slog.Error("Failed to shut down the Kafka producer cleanly","err",err)
+		slog.Error("Failed to shut down the Kafka producer cleanly", "err", err)
 	} else {
 		slog.Info("kafka: Closed producer")
 	}

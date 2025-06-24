@@ -11,9 +11,9 @@ import (
 )
 
 type FirehoseConfig struct {
-	DeliveryStreamName string                 `yaml:"deliveryStreamName"`
-	Region             string                 `yaml:"region"`
-	Layout             map[string]interface{} `yaml:"layout"`
+	DeliveryStreamName string         `yaml:"deliveryStreamName"`
+	Region             string         `yaml:"region"`
+	Layout             map[string]any `yaml:"layout"`
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
 	DeDot bool `yaml:"deDot"`
 }
@@ -25,7 +25,8 @@ type FirehoseSink struct {
 
 func NewFirehoseSink(cfg *FirehoseConfig) (Sink, error) {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(cfg.Region)},
+		Region: aws.String(cfg.Region),
+	},
 	)
 	if err != nil {
 		return nil, err

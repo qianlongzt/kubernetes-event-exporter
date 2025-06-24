@@ -34,8 +34,8 @@ func GetString(event *kube.EnhancedEvent, text string) (string, error) {
 	return buf.String(), nil
 }
 
-func convertLayoutTemplate(layout map[string]interface{}, ev *kube.EnhancedEvent) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func convertLayoutTemplate(layout map[string]any, ev *kube.EnhancedEvent) (map[string]any, error) {
+	result := make(map[string]any)
 
 	for key, value := range layout {
 		m, err := convertTemplate(value, ev)
@@ -47,7 +47,7 @@ func convertLayoutTemplate(layout map[string]interface{}, ev *kube.EnhancedEvent
 	return result, nil
 }
 
-func convertTemplate(value interface{}, ev *kube.EnhancedEvent) (interface{}, error) {
+func convertTemplate(value any, ev *kube.EnhancedEvent) (any, error) {
 	switch v := value.(type) {
 	case string:
 		rendered, err := GetString(ev, v)
@@ -56,8 +56,8 @@ func convertTemplate(value interface{}, ev *kube.EnhancedEvent) (interface{}, er
 		}
 
 		return rendered, nil
-	case map[interface{}]interface{}:
-		strKeysMap := make(map[string]interface{})
+	case map[any]any:
+		strKeysMap := make(map[string]any)
 		for k, v := range v {
 			res, err := convertTemplate(v, ev)
 			if err != nil {
@@ -67,8 +67,8 @@ func convertTemplate(value interface{}, ev *kube.EnhancedEvent) (interface{}, er
 			strKeysMap[k.(string)] = res
 		}
 		return strKeysMap, nil
-	case map[string]interface{}:
-		strKeysMap := make(map[string]interface{})
+	case map[string]any:
+		strKeysMap := make(map[string]any)
 		for k, v := range v {
 			res, err := convertTemplate(v, ev)
 			if err != nil {
@@ -77,8 +77,8 @@ func convertTemplate(value interface{}, ev *kube.EnhancedEvent) (interface{}, er
 			strKeysMap[k] = res
 		}
 		return strKeysMap, nil
-	case []interface{}:
-		listConf := make([]interface{}, len(v))
+	case []any:
+		listConf := make([]any, len(v))
 		for i := range v {
 			t, err := convertTemplate(v[i], ev)
 			if err != nil {
@@ -91,7 +91,7 @@ func convertTemplate(value interface{}, ev *kube.EnhancedEvent) (interface{}, er
 	return nil, nil
 }
 
-func serializeEventWithLayout(layout map[string]interface{}, ev *kube.EnhancedEvent) ([]byte, error) {
+func serializeEventWithLayout(layout map[string]any, ev *kube.EnhancedEvent) ([]byte, error) {
 	var toSend []byte
 	if layout != nil {
 		res, err := convertLayoutTemplate(layout, ev)

@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -9,9 +10,9 @@ import (
 )
 
 type SQSConfig struct {
-	QueueName string                 `yaml:"queueName"`
-	Region    string                 `yaml:"region"`
-	Layout    map[string]interface{} `yaml:"layout"`
+	QueueName string         `yaml:"queueName"`
+	Region    string         `yaml:"region"`
+	Layout    map[string]any `yaml:"layout"`
 }
 
 type SQSSink struct {
@@ -22,7 +23,8 @@ type SQSSink struct {
 
 func NewSQSSink(cfg *SQSConfig) (Sink, error) {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(cfg.Region)},
+		Region: aws.String(cfg.Region),
+	},
 	)
 	if err != nil {
 		return nil, err
@@ -32,7 +34,6 @@ func NewSQSSink(cfg *SQSConfig) (Sink, error) {
 	out, err := svc.GetQueueUrl(&sqs.GetQueueUrlInput{
 		QueueName: &cfg.QueueName,
 	})
-
 	if err != nil {
 		return nil, err
 	}

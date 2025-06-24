@@ -25,11 +25,11 @@ type LokiMsg struct {
 }
 
 type LokiConfig struct {
-	Layout       map[string]interface{} `yaml:"layout"`
-	StreamLabels map[string]string      `yaml:"streamLabels"`
-	TLS          TLS                    `yaml:"tls"`
-	URL          string                 `yaml:"url"`
-	Headers      map[string]string      `yaml:"headers"`
+	Layout       map[string]any    `yaml:"layout"`
+	StreamLabels map[string]string `yaml:"streamLabels"`
+	TLS          TLS               `yaml:"tls"`
+	URL          string            `yaml:"url"`
+	Headers      map[string]string `yaml:"headers"`
 }
 
 type Loki struct {

@@ -14,11 +14,11 @@ import (
 )
 
 type EventBridgeConfig struct {
-	DetailType   string                 `yaml:"detailType"`
-	Details      map[string]interface{} `yaml:"details"`
-	Source       string                 `yaml:"source"`
-	EventBusName string                 `yaml:"eventBusName"`
-	Region       string                 `yaml:"region"`
+	DetailType   string         `yaml:"detailType"`
+	Details      map[string]any `yaml:"details"`
+	Source       string         `yaml:"source"`
+	EventBusName string         `yaml:"eventBusName"`
+	Region       string         `yaml:"region"`
 }
 
 type EventBridgeSink struct {
@@ -80,7 +80,7 @@ func (s *EventBridgeSink) Send(ctx context.Context, ev *kube.EnhancedEvent) erro
 	// TODO: Retry failed events
 	err := req.Send()
 	if err != nil {
-		slog.Error("EventBridge Error","err", err)
+		slog.Error("EventBridge Error", "err", err)
 		return err
 	}
 	return nil

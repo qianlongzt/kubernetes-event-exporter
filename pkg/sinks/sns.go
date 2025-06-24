@@ -2,6 +2,7 @@ package sinks
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
@@ -9,9 +10,9 @@ import (
 )
 
 type SNSConfig struct {
-	TopicARN string                 `yaml:"topicARN"`
-	Region   string                 `yaml:"region"`
-	Layout   map[string]interface{} `yaml:"layout"`
+	TopicARN string         `yaml:"topicARN"`
+	Region   string         `yaml:"region"`
+	Layout   map[string]any `yaml:"layout"`
 }
 
 type SNSSink struct {
@@ -21,7 +22,8 @@ type SNSSink struct {
 
 func NewSNSSink(cfg *SNSConfig) (Sink, error) {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(cfg.Region)},
+		Region: aws.String(cfg.Region),
+	},
 	)
 	if err != nil {
 		return nil, err

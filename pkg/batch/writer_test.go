@@ -2,9 +2,10 @@ package batch
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSimpleWriter(t *testing.T) {
@@ -14,8 +15,8 @@ func TestSimpleWriter(t *testing.T) {
 		Interval:   time.Second * 2,
 	}
 
-	var allItems []interface{}
-	w := NewWriter(cfg, func(ctx context.Context, items []interface{}) []bool {
+	var allItems []any
+	w := NewWriter(cfg, func(ctx context.Context, items []any) []bool {
 		resp := make([]bool, len(items))
 		for idx := range resp {
 			resp[idx] = true
@@ -50,8 +51,8 @@ func TestLargerThanBatchSize(t *testing.T) {
 		Interval:   time.Second * 2,
 	}
 
-	allItems := make([][]interface{}, 0)
-	w := NewWriter(cfg, func(ctx context.Context, items []interface{}) []bool {
+	allItems := make([][]any, 0)
+	w := NewWriter(cfg, func(ctx context.Context, items []any) []bool {
 		resp := make([]bool, len(items))
 		for idx := range resp {
 			resp[idx] = true
@@ -66,9 +67,9 @@ func TestLargerThanBatchSize(t *testing.T) {
 	w.Stop()
 
 	assert.Len(t, allItems, 3)
-	assert.Equal(t, allItems[0], []interface{}{1, 2, 3})
-	assert.Equal(t, allItems[1], []interface{}{4, 5, 6})
-	assert.Equal(t, allItems[2], []interface{}{7})
+	assert.Equal(t, allItems[0], []any{1, 2, 3})
+	assert.Equal(t, allItems[1], []any{4, 5, 6})
+	assert.Equal(t, allItems[2], []any{7})
 }
 
 func TestSimpleInterval(t *testing.T) {
@@ -78,8 +79,8 @@ func TestSimpleInterval(t *testing.T) {
 		Interval:   time.Millisecond * 20,
 	}
 
-	allItems := make([][]interface{}, 0)
-	w := NewWriter(cfg, func(ctx context.Context, items []interface{}) []bool {
+	allItems := make([][]any, 0)
+	w := NewWriter(cfg, func(ctx context.Context, items []any) []bool {
 		resp := make([]bool, len(items))
 		for idx := range resp {
 			resp[idx] = true
@@ -96,7 +97,7 @@ func TestSimpleInterval(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 50)
 	assert.Len(t, allItems, 1)
-	assert.Equal(t, allItems[0], []interface{}{1, 2})
+	assert.Equal(t, allItems[0], []any{1, 2})
 
 	w.Stop()
 	assert.Len(t, allItems, 1)
@@ -109,8 +110,8 @@ func TestIntervalComplex(t *testing.T) {
 		Interval:   time.Millisecond * 20,
 	}
 
-	allItems := make([][]interface{}, 0)
-	w := NewWriter(cfg, func(ctx context.Context, items []interface{}) []bool {
+	allItems := make([][]any, 0)
+	w := NewWriter(cfg, func(ctx context.Context, items []any) []bool {
 		resp := make([]bool, len(items))
 		for idx := range resp {
 			resp[idx] = true
@@ -128,7 +129,7 @@ func TestIntervalComplex(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 50)
 	assert.Len(t, allItems, 1)
-	assert.Equal(t, allItems[0], []interface{}{1, 2, 3, 4})
+	assert.Equal(t, allItems[0], []any{1, 2, 3, 4})
 
 	w.Stop()
 	assert.Len(t, allItems, 1)
@@ -141,8 +142,8 @@ func TestIntervalComplexAfterFlush(t *testing.T) {
 		Interval:   time.Millisecond * 20,
 	}
 
-	allItems := make([][]interface{}, 0)
-	w := NewWriter(cfg, func(ctx context.Context, items []interface{}) []bool {
+	allItems := make([][]any, 0)
+	w := NewWriter(cfg, func(ctx context.Context, items []any) []bool {
 		resp := make([]bool, len(items))
 		for idx := range resp {
 			resp[idx] = true
@@ -160,13 +161,13 @@ func TestIntervalComplexAfterFlush(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 50)
 	assert.Len(t, allItems, 1)
-	assert.Equal(t, allItems[0], []interface{}{1, 2, 3, 4})
+	assert.Equal(t, allItems[0], []any{1, 2, 3, 4})
 
 	w.Submit(5, 6, 7)
 	w.Stop()
 
 	assert.Len(t, allItems, 2)
-	assert.Equal(t, allItems[1], []interface{}{5, 6, 7})
+	assert.Equal(t, allItems[1], []any{5, 6, 7})
 }
 
 func TestRetry(t *testing.T) {
@@ -176,8 +177,8 @@ func TestRetry(t *testing.T) {
 		Interval:   time.Millisecond * 10,
 	}
 
-	allItems := make([][]interface{}, 0)
-	w := NewWriter(cfg, func(ctx context.Context, items []interface{}) []bool {
+	allItems := make([][]any, 0)
+	w := NewWriter(cfg, func(ctx context.Context, items []any) []bool {
 		resp := make([]bool, len(items))
 		for idx := range resp {
 			resp[idx] = items[idx] != 2
@@ -194,8 +195,8 @@ func TestRetry(t *testing.T) {
 	time.Sleep(time.Millisecond * 200)
 	assert.Len(t, allItems, 4)
 
-	assert.Equal(t, allItems[0], []interface{}{1, 2, 3})
-	assert.Equal(t, allItems[1], []interface{}{2})
-	assert.Equal(t, allItems[2], []interface{}{2})
-	assert.Equal(t, allItems[3], []interface{}{2})
+	assert.Equal(t, allItems[0], []any{1, 2, 3})
+	assert.Equal(t, allItems[1], []any{2})
+	assert.Equal(t, allItems[2], []any{2})
+	assert.Equal(t, allItems[3], []any{2})
 }

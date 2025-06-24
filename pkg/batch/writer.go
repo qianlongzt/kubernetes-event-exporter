@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 // Writer allows to buffer some items and call the Handler function either when the buffer is full or the timeout is
 // reached. There will also be support for concurrency for high volume. The handler function is supposed to return an
 // array of booleans to indicate whether the transfer was successful or not. It can be replaced with status codes in
@@ -17,15 +16,15 @@ type Writer struct {
 	len      int
 	done     chan bool
 	stopDone chan bool
-	items    chan interface{}
+	items    chan any
 }
 
 type bufferItem struct {
-	v       interface{}
+	v       any
 	attempt int
 }
 
-type Callback func(ctx context.Context, items []interface{}) []bool
+type Callback func(ctx context.Context, items []any) []bool
 
 type WriterConfig struct {
 	BatchSize  int
@@ -45,7 +44,7 @@ func NewWriter(cfg WriterConfig, cb Callback) *Writer {
 // Indicates the start to accept the
 func (w *Writer) Start() {
 	w.done = make(chan bool)
-	w.items = make(chan interface{})
+	w.items = make(chan any)
 	w.stopDone = make(chan bool)
 	ticker := time.NewTicker(w.cfg.Interval)
 
@@ -79,7 +78,7 @@ func (w *Writer) processBuffer(ctx context.Context) {
 	}
 
 	// Need to copy the underlying item to another slice
-	slice := make([]interface{}, w.len)
+	slice := make([]any, w.len)
 	for i := 0; i < w.len; i++ {
 		slice[i] = w.buffer[i].v
 	}
@@ -118,7 +117,7 @@ func (w *Writer) Stop() {
 }
 
 // Submit pushes the items to the income buffer and they are placed onto the actual buffer from there.
-func (w *Writer) Submit(items ...interface{}) {
+func (w *Writer) Submit(items ...any) {
 	for _, item := range items {
 		w.items <- item
 	}

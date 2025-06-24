@@ -25,12 +25,12 @@ type OpenSearchConfig struct {
 	// Indexing preferences
 	UseEventID bool `yaml:"useEventID"`
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
-	DeDot       bool                   `yaml:"deDot"`
-	Index       string                 `yaml:"index"`
-	IndexFormat string                 `yaml:"indexFormat"`
-	Type        string                 `yaml:"type"`
-	TLS         TLS                    `yaml:"tls"`
-	Layout      map[string]interface{} `yaml:"layout"`
+	DeDot       bool           `yaml:"deDot"`
+	Index       string         `yaml:"index"`
+	IndexFormat string         `yaml:"indexFormat"`
+	Type        string         `yaml:"type"`
+	TLS         TLS            `yaml:"tls"`
+	Layout      map[string]any `yaml:"layout"`
 }
 
 func NewOpenSearch(cfg *OpenSearchConfig) (*OpenSearch, error) {

@@ -12,8 +12,8 @@ import (
 
 type StdoutConfig struct {
 	// DeDot all labels and annotations in the event. For both the event and the involvedObject
-	DeDot  bool                   `yaml:"deDot"`
-	Layout map[string]interface{} `yaml:"layout"`
+	DeDot  bool           `yaml:"deDot"`
+	Layout map[string]any `yaml:"layout"`
 }
 
 func (f *StdoutConfig) Validate() error {

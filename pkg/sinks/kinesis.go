@@ -3,6 +3,7 @@ package sinks
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kinesis"
@@ -10,9 +11,9 @@ import (
 )
 
 type KinesisConfig struct {
-	StreamName string                 `yaml:"streamName"`
-	Region     string                 `yaml:"region"`
-	Layout     map[string]interface{} `yaml:"layout"`
+	StreamName string         `yaml:"streamName"`
+	Region     string         `yaml:"region"`
+	Layout     map[string]any `yaml:"layout"`
 }
 
 type KinesisSink struct {
@@ -22,7 +23,8 @@ type KinesisSink struct {
 
 func NewKinesisSink(cfg *KinesisConfig) (Sink, error) {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(cfg.Region)},
+		Region: aws.String(cfg.Region),
+	},
 	)
 	if err != nil {
 		return nil, err
