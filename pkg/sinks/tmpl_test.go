@@ -31,6 +31,8 @@ func TestLayoutConvert(t *testing.T) {
 			"name":      "{{ .InvolvedObject.Name }}",
 			"namespace": "{{ .Namespace }}",
 			"type":      "{{ .Type }}",
+			"bool":      true,
+			"number":    1,
 			"tags":      tagz,
 		},
 		"eventType": "kube-event",
@@ -48,6 +50,8 @@ func TestLayoutConvert(t *testing.T) {
 
 	val2, ok2 := val["message"].(string)
 	require.True(t, ok2, "cannot cast message to string")
-
 	require.Equal(t, val2, ev.Message)
+
+	require.Equal(t, true, val["bool"])
+	require.Equal(t, 1, val["number"])
 }

@@ -87,8 +87,9 @@ func convertTemplate(value any, ev *kube.EnhancedEvent) (any, error) {
 			listConf[i] = t
 		}
 		return listConf, nil
+	default:
+		return v, nil
 	}
-	return nil, nil
 }
 
 func serializeEventWithLayout(layout map[string]any, ev *kube.EnhancedEvent) ([]byte, error) {
