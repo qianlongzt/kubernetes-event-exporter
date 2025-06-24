@@ -182,7 +182,6 @@ func NewBigQuerySink(cfg *BigQueryConfig) (*BigQuerySink, error) {
 		cfg.TimeoutSeconds = 60
 	}
 
-	rand.Seed(time.Now().UTC().UnixNano())
 	handleBatch := func(ctx context.Context, items []any) []bool {
 		res := make([]bool, len(items))
 		for i := 0; i < len(items); i++ {
